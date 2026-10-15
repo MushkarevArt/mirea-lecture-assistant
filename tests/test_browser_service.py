@@ -13,6 +13,49 @@ from mirea_lecture_assistant.browser_service import BrowserService
 LECTURE = "https://mts-link.ru/event/12345"
 
 
+def test_relaunch_accepts_a_new_browser_identity(service, monkeypatch):
+    service._browser_id = "previous-lecture-browser"
+    monkeypatch.setattr(service, "_discover_port", lambda: None)
+    monkeypatch.setattr(service, "profile_in_use", lambda: False)
+    monkeypatch.setattr(service, "_find_browser", lambda: ("Google Chrome", "chrome"))
+    monkeypatch.setattr(service, "_free_port", lambda: 49335)
+    monkeypatch.setattr(service, "LAUNCH_TIMEOUT_SECONDS", 0.01)
+    monkeypatch.setattr(browser_service.subprocess, "Popen", lambda *_a, **_kw: None)
+    monkeypatch.setattr(
+        browser_service,
+        "endpoint_alive",
+        lambda port, timeout, expected_id=None: (
+            port == 49335 and expected_id in (None, "new-lecture-browser")
+        ),
+    )
+    monkeypatch.setattr(
+        browser_service,
+        "debugger_url",
+        lambda port: f"ws://127.0.0.1:{port}/devtools/browser/new-lecture-browser",
+    )
+
+    service.open(service.BLANK_PAGE)
+
+    assert service.is_running
+    assert service._browser_id == "new-lecture-browser"
+    assert (service.profile_dir / service.PORT_FILE).read_text(encoding="utf-8") == (
+        "49335\nnew-lecture-browser"
+    )
+
+
+def test_close_forgets_the_closed_browser_identity(service, monkeypatch):
+    service._browser_id = "closed-browser"
+    monkeypatch.setattr(type(service), "is_running", property(lambda _self: True))
+
+    async def close_browser():
+        pass
+
+    monkeypatch.setattr(service, "_close_async", close_browser)
+    service.close()
+
+    assert service._browser_id is None
+
+
 async def _loaded():
     return None
 

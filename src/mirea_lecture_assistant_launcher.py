@@ -23,6 +23,15 @@ from mirea_lecture_assistant.app import main
 try:
     code = main()
 except Exception:
+    # main() imports Qt and application modules before it configures logging.
+    # A frozen startup failure must still leave a diagnostic file.
+    try:
+        from mirea_lecture_assistant.logging_setup import configure_logging
+        from mirea_lecture_assistant.paths import data_dir
+
+        configure_logging(data_dir() / "logs")
+    except (ImportError, OSError):
+        logging.getLogger("startup").debug("startup_log_unavailable", exc_info=True)
     logging.getLogger("startup").exception("fatal_startup_error")
     logging.shutdown()
     os._exit(supervisor.CRASHED)

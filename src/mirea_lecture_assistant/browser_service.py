@@ -407,6 +407,11 @@ class BrowserService:
             if time.monotonic() < self._launch_blocked_until:
                 raise RuntimeError("Браузер приложения недавно не запустился; повторим позже")
             self.port = self._free_port()
+            # A new Chrome run has a new DevTools browser id. Keeping the id
+            # from the previous lecture makes a healthy new endpoint look like
+            # an unrelated browser, so launch fails and its port is never saved.
+            # Existing/adopted browsers above still require their recorded id.
+            self._browser_id = None
             self._prepare_password_preferences()
             args = [
                 executable,
@@ -497,6 +502,7 @@ class BrowserService:
         self.port = None
         self.process = None
         self.muted = None
+        self._browser_id = None
         return self.open(url, muted=muted, width=width, height=height)
 
     def _navigate(self, url: str, *, force_navigation: bool = False) -> None:
@@ -1057,6 +1063,7 @@ class BrowserService:
         self.port = None
         self.process = None
         self.muted = None
+        self._browser_id = None
 
     async def _close_async(self) -> None:
 

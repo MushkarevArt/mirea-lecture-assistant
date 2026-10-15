@@ -88,12 +88,18 @@ if sys.platform == "win32":
     # Python 3.12 ships an older VC runtime than current PySide6. If that older
     # copy is placed beside the executable, Windows loads it first and QtCore
     # cannot find procedures introduced in the newer runtime bundled by Qt.
+    # Filter runtime DLLs by name, not by their source directory: Python itself
+    # may live in a Codex runtime, along with python312.dll and stdlib extensions.
+    # Other tools on PATH can inject their incompatible native DLLs (e.g. ICU).
     a.binaries = [
         entry
         for entry in a.binaries
         if entry[0].lower() not in qt_runtime_names
         and not entry[0].lower().startswith("api-ms-win-")
-        and "codex-runtimes" not in entry[1].lower()
+        and not (
+            "codex-runtimes" in entry[1].lower()
+            and "/dependencies/native/" in entry[1].replace("\\", "/").lower()
+        )
     ]
     a.binaries += [
         (name, str(qt_runtime_dir / name), "BINARY") for name in sorted(qt_runtime_names)
