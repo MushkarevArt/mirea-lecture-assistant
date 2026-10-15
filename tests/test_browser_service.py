@@ -22,13 +22,15 @@ def test_relaunch_accepts_a_new_browser_identity(service, monkeypatch):
     monkeypatch.setattr(service, "LAUNCH_TIMEOUT_SECONDS", 0.01)
     monkeypatch.setattr(browser_service.subprocess, "Popen", lambda *_a, **_kw: None)
     monkeypatch.setattr(
-        browser_service, "endpoint_alive",
+        browser_service,
+        "endpoint_alive",
         lambda port, timeout, expected_id=None: (
             port == 49335 and expected_id in (None, "new-lecture-browser")
         ),
     )
     monkeypatch.setattr(
-        browser_service, "debugger_url",
+        browser_service,
+        "debugger_url",
         lambda port: f"ws://127.0.0.1:{port}/devtools/browser/new-lecture-browser",
     )
 
