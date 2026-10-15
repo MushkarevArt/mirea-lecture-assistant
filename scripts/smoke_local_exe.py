@@ -41,9 +41,11 @@ def main() -> None:
         creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
     )
     log_path = root / "data" / "MireaLectureAssistant" / "logs" / "app.log"
+    print(f"SMOKE_EXIT={result.returncode} LOG={log_path}")
+    if not log_path.is_file():
+        raise RuntimeError("Executable exited before creating its application log")
     log = log_path.read_text(encoding="utf-8")
     print("\n".join(log.splitlines()[-10:]))
-    print(f"SMOKE_EXIT={result.returncode} LOG={log_path}")
     if result.returncode or "smoke_https_ok" not in log or "main_window_ready" not in log:
         raise RuntimeError("Executable smoke test failed")
 
